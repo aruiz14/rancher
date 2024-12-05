@@ -144,6 +144,12 @@ var (
 		false,
 		false,
 		true)
+	AggregatedRoleTemplates = newFeature(
+		"aggregated-roletemplates",
+		"Make RoleTemplates use aggregation for generated RBAC roles",
+		false,
+		false,
+		true)
 )
 
 type Feature struct {
