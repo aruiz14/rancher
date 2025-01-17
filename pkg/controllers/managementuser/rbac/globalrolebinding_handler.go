@@ -6,7 +6,9 @@ import (
 
 	"github.com/rancher/norman/types/slice"
 	apisv3 "github.com/rancher/rancher/pkg/apis/management.cattle.io/v3"
+	"github.com/rancher/rancher/pkg/controllers/managementuser/rbac/roletemplates"
 	"github.com/rancher/rancher/pkg/controllers/status"
+	"github.com/rancher/rancher/pkg/features"
 	mgmtv3 "github.com/rancher/rancher/pkg/generated/controllers/management.cattle.io/v3"
 	v3 "github.com/rancher/rancher/pkg/generated/norman/management.cattle.io/v3"
 	rbacv1 "github.com/rancher/rancher/pkg/generated/norman/rbac.authorization.k8s.io/v1"
@@ -58,7 +60,15 @@ func RegisterIndexers(scaledContext *config.ScaledContext) error {
 		rtbByClusterAndRoleTemplateIndex: rtbByClusterAndRoleTemplateName,
 		rtbByClusterAndUserIndex:         rtbByClusterAndUserNotDeleting,
 	}
-	return crtbInformer.AddIndexers(crtbIndexers)
+	if err := crtbInformer.AddIndexers(crtbIndexers); err != nil {
+		return err
+	}
+
+	if features.AggregatedRoleTemplates.Enabled() {
+		roletemplates.RegisterIndexers(scaledContext.Wrangler)
+	}
+
+	return nil
 }
 
 func newGlobalRoleBindingHandler(workload *config.UserContext) v3.GlobalRoleBindingHandlerFunc {

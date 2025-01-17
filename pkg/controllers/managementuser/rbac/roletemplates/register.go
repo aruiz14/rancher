@@ -6,6 +6,7 @@ import (
 
 	v3 "github.com/rancher/rancher/pkg/apis/management.cattle.io/v3"
 	"github.com/rancher/rancher/pkg/types/config"
+	"github.com/rancher/rancher/pkg/wrangler"
 	"github.com/rancher/wrangler/v3/pkg/name"
 )
 
@@ -22,18 +23,21 @@ const (
 	roleTemplateRemoveHandler = "cluster-roletemplate-remove-handler"
 )
 
+func RegisterIndexers(wranglerContext *wrangler.Context) {
+	wranglerContext.Mgmt.ClusterRoleTemplateBinding().Cache().AddIndexer(crtbUsernameIndexer, getCRTBByUsername)
+	wranglerContext.Mgmt.ProjectRoleTemplateBinding().Cache().AddIndexer(prtbUsernameIndexer, getPRTBByUsername)
+}
+
 func Register(ctx context.Context, workload *config.UserContext) {
 	management := workload.Management.WithAgent("rbac-role-templates")
 
 	c := newCRTBHandler(workload)
 	management.Wrangler.Mgmt.ClusterRoleTemplateBinding().OnChange(ctx, crtbChangeHandler, c.OnChange)
 	management.Wrangler.Mgmt.ClusterRoleTemplateBinding().OnRemove(ctx, crtbRemoveHandler, c.OnRemove)
-	management.Wrangler.Mgmt.ClusterRoleTemplateBinding().Cache().AddIndexer(crtbUsernameIndexer, getCRTBByUsername)
 
 	p := newPRTBHandler(workload)
 	management.Wrangler.Mgmt.ProjectRoleTemplateBinding().OnChange(ctx, prtbChangeHandler, p.OnChange)
 	management.Wrangler.Mgmt.ProjectRoleTemplateBinding().OnRemove(ctx, prtbRemoveHandler, p.OnRemove)
-	management.Wrangler.Mgmt.ProjectRoleTemplateBinding().Cache().AddIndexer(prtbUsernameIndexer, getPRTBByUsername)
 
 	rth := newRoleTemplateHandler(workload)
 	management.Wrangler.Mgmt.RoleTemplate().OnChange(ctx, roleTemplateChangeHandler, rth.OnChange)
